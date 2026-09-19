@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إنشاء حساب جديد - منصة أ. عبدالرحمن مصطفى</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        #errorMessage, #successMessage {
+            margin-top: 10px;
+            font-weight: bold;
+            display: none;
+        }
+        #errorMessage { color: #f87171; }
+        #successMessage { color: #4ade80; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo">أ. عبدالرحمن مصطفى</div>
+        <nav>
+            <a href="index.html">الرئيسية</a>
+            <a href="login.html">تسجيل الدخول</a>
+        </nav>
+    </header>
+
+    <div class="subscribe-section">
+        <h2>إنشاء حساب جديد</h2>
+        <form id="registerForm">
+            <div class="input-group">
+                <label>الاسم بالكامل:</label>
+                <input type="text" id="regName" placeholder="اكتب اسمك بالكامل" required>
+            </div>
+            <div class="input-group">
+                <label>رقم الهاتف:</label>
+                <input type="tel" id="regPhone" placeholder="01xxxxxxxxx" required pattern="[0-9]{11}">
+            </div>
+            <div class="input-group">
+                <label>كلمة السر:</label>
+                <input type="password" id="regPassword" placeholder="اختر كلمة سر (6 أحرف على الأقل)" required minlength="6">
+            </div>
+            <div class="input-group">
+                <label>تأكيد كلمة السر:</label>
+                <input type="password" id="regPasswordConfirm" placeholder="أعد كتابة كلمة السر" required minlength="6">
+            </div>
+            <button type="submit" class="btn-main">إنشاء الحساب</button>
+            <p id="errorMessage"></p>
+            <p id="successMessage"></p>
+        </form>
+    </div>
+
+    <script>
+        // رابط السيرفر المباشر على Vercel
+        const API_BASE_URL = 'https://math-platform-backend.vercel.app';
+
+        document.getElementById('registerForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+
+            const name = document.getElementById('regName').value.trim();
+            const phone = document.getElementById('regPhone').value.trim();
+            const password = document.getElementById('regPassword').value;
+            const passwordConfirm = document.getElementById('regPasswordConfirm').value;
+
+            const errorMsg = document.getElementById('errorMessage');
+            const successMsg = document.getElementById('successMessage');
+            errorMsg.style.display = 'none';
+            successMsg.style.display = 'none';
+
+            // تحقق من تطابق كلمة السر
+            if (password !== passwordConfirm) {
+                errorMsg.innerText = 'كلمتا السر غير متطابقتين!';
+                errorMsg.style.display = 'block';
+                return;
+            }
+
+            // تحقق من رقم الهاتف (11 رقم)
+            if (!/^[0-9]{11}$/.test(phone)) {
+                errorMsg.innerText = 'رقم الهاتف يجب أن يكون 11 رقمًا!';
+                errorMsg.style.display = 'block';
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/auth/register`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        name: name,
+                        phone: phone,
+                        password: password
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    successMsg.innerText = 'تم إنشاء الحساب بنجاح! جاري تحويلك لتسجيل الدخول...';
+                    successMsg.style.display = 'block';
+
+                    setTimeout(() => {
+                        window.location.href = 'login.html';
+                    }, 1500);
+                } else {
+                    errorMsg.innerText = data.error || data.message || 'حدث خطأ أثناء إنشاء الحساب!';
+                    errorMsg.style.display = 'block';
+                }
+            } catch (error) {
+                console.error("خطأ في الاتصال بالسيرفر:", error);
+                errorMsg.innerText = "تعذر الاتصال بالسيرفر، تأكد من تشغيل الباك إيند!";
+                errorMsg.style.display = 'block';
+            }
+        });
+    </script>
+
+</body>
+</html>

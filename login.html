@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تسجيل الدخول - منصة أ. عبدالرحمن مصطفى</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .login-container {
+            max-width: 400px;
+            margin: 80px auto;
+            text-align: center;
+        }
+        .input-group {
+            margin-bottom: 15px;
+            text-align: right;
+        }
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #94a3b8;
+            font-weight: bold;
+        }
+        #errorMessage {
+            color: #f87171;
+            margin-top: 10px;
+            display: none;
+            font-weight: bold;
+        }
+        .auth-links {
+            margin-top: 15px;
+            font-size: 0.9em;
+        }
+        .auth-links a {
+            color: #38bdf8;
+            text-decoration: none;
+        }
+        .auth-links a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo">أ. عبدالرحمن مصطفى</div>
+        <nav>
+            <a href="index.html">الرئيسية</a>
+            <a href="register.html">إنشاء حساب</a>
+        </nav>
+    </header>
+
+    <div class="login-container">
+        <h2>تسجيل دخول الطالب</h2>
+        <form id="loginForm">
+            <div class="input-group">
+                <label>الاسم بالكامل أو رقم الهاتف:</label>
+                <input type="text" id="username" placeholder="أدخل اسمك أو رقم الهاتف" required>
+            </div>
+            <div class="input-group">
+                <label>كلمة السر:</label>
+                <input type="password" id="password" placeholder="أدخل كلمة السر" required>
+            </div>
+            <button type="submit" class="btn-main" style="width: 100%;">دخول للمنصة</button>
+            <p id="errorMessage"></p>
+            
+            <div class="auth-links">
+                <span>ليس لديك حساب؟ </span>
+                <a href="register.html">إنشاء حساب جديد</a>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        // رابط السيرفر المباشر على Vercel
+        const API_BASE_URL = 'https://math-platform-backend.vercel.app';
+
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const userInput = document.getElementById('username').value.trim();
+            const passInput = document.getElementById('password').value.trim();
+            const errorMsg = document.getElementById('errorMessage');
+            
+            errorMsg.style.display = 'none';
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        identifier: userInput,
+                        password: passInput
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    sessionStorage.setItem('authToken', data.token);
+                    sessionStorage.setItem('currentUser', JSON.stringify(data.user));
+
+                    if (data.user && data.user.role === 'admin') {
+                        alert("أهلاً بك يا أستاذ عبدالرحمن!");
+                    }
+                    
+                    window.location.href = "courses.html";
+                } else {
+                    errorMsg.style.display = "block";
+                    errorMsg.innerText = data.error || data.message || "الاسم/رقم الهاتف أو كلمة السر غير صحيحة!";
+                }
+            } catch (error) {
+                console.error("خطأ في الاتصال بالسيرفر:", error);
+                errorMsg.style.display = "block";
+                errorMsg.innerText = "عذراً، تعذر الاتصال بالسيرفر. تأكد من تشغيل الباك إيند!";
+            }
+        });
+    </script>
+</body>
+</html>

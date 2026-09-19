@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة الدروس - منصة أ. عبدالرحمن مصطفى</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body {
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .dashboard-container {
+            display: flex;
+            flex-wrap: wrap;
+            max-width: 1200px;
+            margin: 30px auto;
+            gap: 20px;
+            padding: 0 15px;
+        }
+        
+        .main-video-section {
+            flex: 2;
+            min-width: 300px;
+            background: #1e293b;
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid #334155;
+        }
+
+        .main-video-section h2 {
+            color: #ffffff;
+        }
+
+        .video-wrapper {
+            position: relative;
+            width: 100%;
+            height: 400px;
+            background-color: #000;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .video-wrapper iframe, .video-wrapper video {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        .moving-watermark {
+            position: absolute;
+            color: #ef4444;
+            background-color: transparent;
+            font-size: 13px;
+            font-weight: bold;
+            pointer-events: none;
+            z-index: 2147483646;
+            white-space: nowrap;
+            opacity: 0;
+            transition: opacity 0.8s ease-in-out, top 0.5s, left 0.5s;
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.9);
+        }
+
+        .custom-fullscreen-btn {
+            position: absolute;
+            bottom: 12px;
+            left: 12px;
+            z-index: 2147483647;
+            background: rgba(0, 0, 0, 0.6);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: bold;
+            transition: 0.2s;
+        }
+
+        .custom-fullscreen-btn:hover {
+            background: rgba(239, 68, 68, 0.8);
+        }
+
+        .lessons-sidebar {
+            flex: 1;
+            min-width: 280px;
+            background: #1e293b;
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid #334155;
+        }
+
+        .lessons-sidebar h3 {
+            color: #38bdf8;
+        }
+
+        .lesson-item {
+            padding: 12px;
+            margin-bottom: 8px;
+            border-radius: 6px;
+            border: 1px solid #334155;
+            cursor: pointer;
+            transition: 0.2s;
+            color: #e2e8f0;
+        }
+
+        .lesson-item:hover, .lesson-item.active {
+            background-color: #0284c7;
+            color: white;
+            border-color: #0284c7;
+        }
+
+        .download-btn {
+            display: inline-block;
+            margin-top: 15px;
+            background-color: #10b981;
+            color: white;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: bold;
+        }
+
+        .admin-link-btn {
+            background-color: #f59e0b;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: bold;
+            margin-left: 10px;
+            display: none;
+        }
+
+        #welcomeStudent {
+            color: #38bdf8;
+        }
+    </style>
+</head>
+<body oncontextmenu="return false;">
+
+    <header>
+        <div class="logo">أ. عبدالرحمن مصطفى</div>
+        <nav>
+            <a href="admin.html" id="adminBtn" class="admin-link-btn">⚙️ لوحة التحكم</a>
+            <span id="welcomeStudent">مرحباً بك</span>
+            <a href="login.html" onclick="sessionStorage.clear()" style="margin-right: 15px; color: #f87171;">تسجيل خروج</a>
+        </nav>
+    </header>
+
+    <div class="dashboard-container">
+        <div class="main-video-section">
+            <h2 id="lessonTitle">جاري تحميل الدرس...</h2>
+            <br>
+            <div class="video-wrapper" id="videoContainer">
+                <div class="moving-watermark" id="watermark">جاري التحميل...</div>
+                <button class="custom-fullscreen-btn" onclick="toggleContainerFullscreen()">⛶ ملء الشاشة</button>
+            </div>
+
+            <a id="pdfLink" href="#" target="_blank" class="download-btn">📥 تحميل مذكرة الدرس (PDF)</a>
+        </div>
+
+        <div class="lessons-sidebar">
+            <h3>المحاضرات المتاحة</h3>
+            <br>
+            <div id="lessonsList"></div>
+        </div>
+    </div>
+
+    <script>
+        const storedLessons = JSON.parse(localStorage.getItem('platform_custom_lessons'));
+        const lessonsData = (storedLessons && storedLessons.length > 0) ? storedLessons : [
+            { id: 1, title: "الدرس الأول: مقدمة وتمهيد أساسي", videoSrc: "lesson1.mp4", pdf: "#" }
+        ];
+
+        const currentUser = JSON.parse(sessionStorage.getItem('currentUser'));
+
+        if (!currentUser) {
+            alert("عذراً، يجب تسجيل الدخول أولاً!");
+            window.location.href = "login.html";
+        } else {
+            document.getElementById('welcomeStudent').innerText = "أهلاً بك: " + currentUser.name;
+            
+            if (currentUser.role === 'admin') {
+                document.getElementById('adminBtn').style.display = 'inline-block';
+            }
+
+            const watermarkText = currentUser.name + " - " + (currentUser.phone || "");
+            document.getElementById('watermark').innerText = watermarkText;
+            startWatermarkMovement();
+        }
+
+        const lessonsListContainer = document.getElementById('lessonsList');
+        lessonsData.forEach((lesson, index) => {
+            const div = document.createElement('div');
+            div.className = `lesson-item ${index === 0 ? 'active' : ''}`;
+            div.innerHTML = `📚 <strong>${lesson.title}</strong>`;
+            div.onclick = function() {
+                document.querySelectorAll('.lesson-item').forEach(el => el.classList.remove('active'));
+                div.classList.add('active');
+                changeLesson(lesson);
+            };
+            lessonsListContainer.appendChild(div);
+        });
+
+        if (lessonsData.length > 0) {
+            changeLesson(lessonsData[0]);
+        }
+
+        function changeLesson(lesson) {
+            document.getElementById('lessonTitle').innerText = lesson.title;
+            document.getElementById('pdfLink').href = lesson.pdf;
+
+            const container = document.getElementById('videoContainer');
+            const currentWatermarkText = document.getElementById('watermark') ? document.getElementById('watermark').innerText : 'جاري التحميل...';
+            
+            const overlayHtml = `
+                <div class="moving-watermark" id="watermark">${currentWatermarkText}</div>
+                <button class="custom-fullscreen-btn" onclick="toggleContainerFullscreen()">⛶ ملء الشاشة</button>
+            `;
+
+            if (lesson.videoSrc.includes('youtube.com') || lesson.videoSrc.includes('youtu.be')) {
+                let embedUrl = lesson.videoSrc;
+                if (embedUrl.includes('watch?v=')) {
+                    embedUrl = embedUrl.replace('watch?v=', 'embed/');
+                }
+                container.innerHTML = overlayHtml + `<iframe src="${embedUrl}" allowfullscreen></iframe>`;
+            } else {
+                container.innerHTML = overlayHtml + `
+                    <video id="videoPlayer" controls controlsList="nodownload nofullscreen" style="width:100%; height:100%;">
+                        <source src="${lesson.videoSrc}" type="video/mp4">
+                        متصفحك لا يدعم تشغيل الفيديو.
+                    </video>`;
+            }
+        }
+
+        function startWatermarkMovement() {
+            function cycleWatermark() {
+                const wm = document.getElementById('watermark');
+                if (!wm) return;
+
+                const positions = [
+                    { top: Math.floor(Math.random() * 8) + 4, left: Math.floor(Math.random() * 75) + 10 },
+                    { top: Math.floor(Math.random() * 8) + 84, left: Math.floor(Math.random() * 75) + 10 },
+                    { top: Math.floor(Math.random() * 65) + 15, left: Math.floor(Math.random() * 8) + 4 },
+                    { top: Math.floor(Math.random() * 65) + 15, left: Math.floor(Math.random() * 8) + 82 }
+                ];
+
+                const pos = positions[Math.floor(Math.random() * positions.length)];
+                wm.style.top = pos.top + "%";
+                wm.style.left = pos.left + "%";
+                wm.style.opacity = "1";
+
+                setTimeout(() => {
+                    const currentWm = document.getElementById('watermark');
+                    if (currentWm) currentWm.style.opacity = "0";
+                }, 4000);
+            }
+
+            cycleWatermark();
+            setInterval(cycleWatermark, 10000);
+        }
+
+        function toggleContainerFullscreen() {
+            const container = document.getElementById('videoContainer');
+            if (!document.fullscreenElement) {
+                if (container.requestFullscreen) {
+                    container.requestFullscreen();
+                } else if (container.webkitRequestFullscreen) {
+                    container.webkitRequestFullscreen();
+                } else if (container.msRequestFullscreen) {
+                    container.msRequestFullscreen();
+                }
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+            }
+        }
+
+        document.onkeydown = function(e) {
+            if (e.keyCode == 123 || 
+               (e.ctrlKey && e.shiftKey && (e.keyCode == 73 || e.keyCode == 74)) || 
+               (e.ctrlKey && e.keyCode == 85)) {
+                return false;
+            }
+        };
+    </script>
+
+</body>
+</html>
